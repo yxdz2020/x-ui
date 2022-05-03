@@ -29,11 +29,11 @@
 # 安装&升级
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/yxdz2020/x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontents.com/yxdz2020/x-ui/master/install.sh)
 ```  
 如果你的系统版本比较老旧，安装后报错：GLIBC_2.28 not found，请使用如下命令安装0.3.3.9版本
 ```  
-bash <(curl -Ls https://raw.githubusercontent.com/yxdz2020/x-ui/master/install.sh) 0.3.3.9  
+bash <(curl -Ls https://raw.githubusercontents.com/yxdz2020/x-ui/master/install.sh) 0.3.3.9  
 ```  
 但该版本会在切换xray内核时报错，建议尽快升级系统    
 
