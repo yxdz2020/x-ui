@@ -6,6 +6,14 @@
 其中Master分支开发功能，develop分支用于提交Pr  
 欢迎大家使用并反馈意见，帮助我们更好的改善~  
 具体使用教程可以参考个人博客文章[链接](https://coderfan.net/how-to-use-x-ui-pannel-to-set-up-proxies-for-bypassing-gfw.html)
+# 变更记录  
+2022.06.19：增加Shadowsocs2022新的Cipher，增加节点搜索、一键清除流量功能  
+2022.05.14：增加Telegram bot Command控制功能，支持关闭/开启/删除节点等  
+2022.04.25：增加SSH登录提醒  
+2022.04.23：增加更多Telegram bot提醒功能  
+2022.04.16：增加面板设置Telegram bot功能  
+2022.04.12：优化Telegram Bot通知提醒  
+2022.04.06：优化安装/更新流程，添加Telegram bot机器人推送功能
 
 # 功能介绍
 
@@ -17,15 +25,8 @@
 - 可自定义 xray 配置模板
 - 支持 https 访问面板（自备域名 + ssl 证书）
 - 支持一键SSL证书申请且自动续签
+- 增加Telegram bot通知、控制功能
 - 更多高级配置项，详见面板
-
-# 拓展功能
-- 面板设置查询（已实现）
-- 流量使用每日提醒（已实现）
-- 面板登录提醒（已实现）
-- 节点到期提醒（待实现）
-- 更多证书申请方式（待实现）
-- 面板登录白名单设定（待实现）
 # 安装&升级
 
 ```
@@ -111,29 +112,31 @@ docker build -t x-ui .
 - 输入域名时需为二级域名，不可带`www`
 - 本脚本申请证书均为泛域名证书
 
-## Tg机器人使用
+## Telegram bot使用
 
 > 此功能与教程由[FranzKafkaYu](https://github.com/FranzKafkaYu)提供
 
-X-UI支持通过Tg机器人实现每日流量通知，面板登录提醒以及cmd控制等功能，使用Tg机器人，需要自行申请  
+X-UI支持通过Telegram bot实现每日流量通知，面板登录提醒以及cmd控制等功能，使用Telegram bot，需要自行申请  
 具体申请教程可以参考[博客链接](https://coderfan.net/how-to-use-telegram-bot-to-alarm-you-when-someone-login-into-your-vps.html)  
 使用说明:在面板后台设置机器人相关参数，具体包括
 
 - Tg机器人Token
 - Tg机器人ChatId
-- Tg机器人周期运行时间，采用crontab语法  
+- Tg机器人周期运行时间，可使用crontab语法  
 
 参考语法：
 - 30 * * * * * //每一分的第30s进行通知
 - @hourly      //每小时通知
 - @daily       //每天通知（凌晨零点整）
-- @every 8h    //每8小时通知  
+- @every 8h    //每8小时通知 
+- @every 30s   //每30s通知一次
 
 TG通知内容：
 - 节点流量使用
 - 面板登录提醒
 - 节点到期提醒
 - 流量预警提醒  
+- SSH登录提醒
 
 Command内容：  
 
@@ -144,8 +147,6 @@ Command内容：
 - /disable `port`将会关闭对应端口的节点
 - /version v1.5.5将会升级xray到1.5.5版本
 - /help 获取帮助信息
-
-更多功能规划中...
 ## 建议系统
 
 - CentOS 7+
@@ -154,26 +155,17 @@ Command内容：
 
 # 常见问题
 
-## 从 v2-ui 迁移
-
-首先在安装了 v2-ui 的服务器上安装最新版 x-ui，然后使用以下命令进行迁移，将迁移本机 v2-ui 的 `所有 inbound 账号数据`至 x-ui，`面板设置和用户名密码不会迁移`
-
-> 迁移成功后请 `关闭 v2-ui`并且 `重启 x-ui`，否则 v2-ui 的 inbound 会与 x-ui 的 inbound 会产生 `端口冲突`
-
-```
-x-ui v2-ui
-```
 ## 内置SSL证书申请失败
 1.请确保你的域名不为免费域名，CF目前暂不支持免费域名通过API进行证书申请  
 2.请确保输入的域名为一级域名，不要带www  
 3.请勿重复申请，卸载面板本身不会卸载掉证书  
 ## 安装新面板后登录失效，设置按钮为灰  
-1.请清除cookie与浏览器缓存后进行使用
+1.请清除cookie与浏览器缓存后进行使用  
+# Telegram
+[CoderfanBaby](https://t.me/CoderfanBaby)  
+[FranzKafka‘sPrivateGroup](https://t.me/franzkafayu)
 
-## issue 关闭
-
-各种小白问题看得血压很高
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/vaxilu/x-ui.svg)](https://starchart.cc/vaxilu/x-ui)
+[![Stargazers over time](https://starchart.cc/FranzKafkaYu/x-ui.svg)](https://starchart.cc/FranzKafkaYu/x-ui)
