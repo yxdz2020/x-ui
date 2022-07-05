@@ -437,7 +437,17 @@ ssl_cert_issue() {
         fi
         LOGD "请设置域名:"
         read -p "Input your domain here:" CF_Domain
-        LOGD "你的域名设置为:${CF_Domain}"
+        LOGD "你的域名设置为:${CF_Domain},正在进行域名合法性校验..."
+        #here we need to judge whether there exists cert already
+        local currentCert=$(~/.acme.sh/acme.sh --list | tail -1 | awk '{print $1}')
+        if [ ${currentCert} == ${CF_Domain} ]; then
+            local certInfo=$(~/.acme.sh/acme.sh --list)
+            LOGE "域名合法性校验失败,当前环境已有对应域名证书,不可重复申请,当前证书详情:"
+            LOGI "$certInfo"
+            exit 1
+        else
+            LOGI "证书有效性校验通过..."
+        fi
         LOGD "请设置API密钥:"
         read -p "Input your key here:" CF_GlobalKey
         LOGD "你的API密钥为:${CF_GlobalKey}"
