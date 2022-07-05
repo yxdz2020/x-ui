@@ -2,13 +2,12 @@ package service
 
 import (
 	"fmt"
+	"gorm.io/gorm"
 	"time"
 	"x-ui/database"
 	"x-ui/database/model"
 	"x-ui/util/common"
 	"x-ui/xray"
-
-	"gorm.io/gorm"
 )
 
 type InboundService struct {
@@ -97,13 +96,6 @@ func (s *InboundService) DelInbound(id int) error {
 	return db.Delete(model.Inbound{}, id).Error
 }
 
-func (s *InboundService) DelInboundByPort(port int) error {
-	db := database.GetDB()
-	var inbound model.Inbound
-	db.First(&inbound, "port = ?", port)
-	return db.Delete(&inbound).Error
-}
-
 func (s *InboundService) GetInbound(id int) (*model.Inbound, error) {
 	db := database.GetDB()
 	inbound := &model.Inbound{}
@@ -145,33 +137,6 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) error {
 	return db.Save(oldInbound).Error
 }
 
-func (s *InboundService) ClearTrafficByPort(port int) error {
-	db := database.GetDB()
-	Uperr := db.Model(model.Inbound{}).Where("port = ?", port).Update("up", 0).Error
-	if Uperr != nil {
-		fmt.Println("ClearTrafficByPort error:clear up fail")
-		return Uperr
-	}
-	Downerr := db.Model(model.Inbound{}).Where("port = ?", port).Update("down", 0).Error
-	if Downerr != nil {
-		fmt.Println("ClearTrafficByPort error:clear up fail")
-		return Downerr
-	}
-	return nil
-}
-
-func (s *InboundService) ClearAllInboundTraffic() error {
-	inbounds, _ := s.GetAllInbounds()
-	for _, inbound := range inbounds {
-		err := s.ClearTrafficByPort(inbound.Port)
-		if err != nil {
-			fmt.Printf("ClearAllInboundTraffic error,ClearTrafficByPort port %d fail", inbound.Port)
-			continue
-		}
-	}
-	return nil
-}
-
 func (s *InboundService) AddTraffic(traffics []*xray.Traffic) (err error) {
 	if len(traffics) == 0 {
 		return nil
@@ -209,13 +174,4 @@ func (s *InboundService) DisableInvalidInbounds() (int64, error) {
 	err := result.Error
 	count := result.RowsAffected
 	return count, err
-}
-
-func (s *InboundService) DisableInboundByPort(port int) error {
-	db := database.GetDB()
-	return db.Model(model.Inbound{}).Where("port = ?", port).Update("enable", false).Error
-}
-func (s *InboundService) EnableInboundByPort(port int) error {
-	db := database.GetDB()
-	return db.Model(model.Inbound{}).Where("port = ?", port).Update("enable", true).Error
 }

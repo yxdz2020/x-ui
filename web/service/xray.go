@@ -3,11 +3,10 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"go.uber.org/atomic"
 	"sync"
 	"x-ui/logger"
 	"x-ui/xray"
-
-	"go.uber.org/atomic"
 )
 
 var p *xray.Process
