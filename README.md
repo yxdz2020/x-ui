@@ -4,7 +4,7 @@ CN|[EN](./README_EN.md)
 > 该项目仅作为学习golang的实验性项目，请勿用于生产环境
 
 支持多协议多用户的 xray 面板，究极缝合怪    
-通过内置的Telegram bot方便快捷地进行管理你的代理服务  
+通过免费的Telegram bot方便快捷地进行管理你的代理服务  
 具体使用教程可以参考个人博客文章[链接](https://coderfan.net/how-to-use-x-ui-pannel-to-set-up-proxies-for-bypassing-gfw.html)  
 欢迎大家使用并反馈意见或提交Pr,帮助项目更好的改善  
 如果您觉得本项目对您有所帮助,不妨给个star:star2:支持我~
@@ -13,7 +13,7 @@ CN|[EN](./README_EN.md)
 
 - 系统状态监控
 - 支持多用户多协议，网页可视化操作
-- 支持的协议：vmess、vless、trojan、shadowsocks、dokodemo-door、socks、http
+- 支持的协议：vmess、vless、trojan、shadowsocks、shadowsocks 2022、dokodemo-door、socks、http
 - 支持配置更多传输配置
 - 流量统计，限制流量，限制到期时间
 - 可自定义 xray 配置模板
@@ -45,7 +45,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/insta
 <details>
 <summary><b>点击查看效果预览</b></summary>  
   
-![image](https://user-images.githubusercontent.com/38254177/178550844-2b77e853-184c-4e23-9d69-6ff53b9857b4.png)
+![image](https://user-images.githubusercontent.com/38254177/180629631-f76a05c8-ecf0-4685-bbc7-a7058747d213.png)  
+![image](https://user-images.githubusercontent.com/38254177/180629662-b7a325fc-1ebb-47c9-992c-1e7c758a326b.png)
+
+
  </details>  
  
 `Bot使用`:  
@@ -140,7 +143,7 @@ xray 状态: 运行
 - Debian 8+
 
 # 变更记录
-
+- 2022.07.24：增加自动生成面板根路径，节点流量自动重置功能，设备iP接入变化通知功能
 - 2022.07.21：增加节点IP接入变化提醒，Web面板增加停止/重启xray功能，优化部分翻译
 - 2022.07.11：增加节点到期提醒、流量预警策略，增加Telegram bot节点复制、获取分享链接等
 - 2022.07.03：重构Telegram bot功能，指令控制不再需要键盘输入;增加Trojan底层传输配置
