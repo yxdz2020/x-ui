@@ -449,11 +449,14 @@ install_acme() {
 
 #method for standalone mode
 ssl_cert_issue_standalone() {
-    #install acme first
-    install_acme
-    if [ $? -ne 0 ]; then
-        LOGE "install acme failed,please check logs"
-        exit 1
+    #check for acme.sh first
+    if ! command -v ~/.acme.sh/acme.sh &>/dev/null; then
+        echo "acme.sh could not be found. we will install it"
+        install_acme
+        if [ $? -ne 0 ]; then
+            LOGE "install acme failed, please check logs"
+            exit 1
+        fi
     fi
     #install socat second
     if [[ x"${release}" == x"centos" ]]; then
@@ -462,7 +465,7 @@ ssl_cert_issue_standalone() {
         apt install socat -y
     fi
     if [ $? -ne 0 ]; then
-        LOGE "install socat failed,please check logs"
+        LOGE "install socat failed, please check logs"
         exit 1
     else
         LOGI "install socat succeed..."
@@ -509,8 +512,8 @@ ssl_cert_issue_standalone() {
     fi
     #install cert
     ~/.acme.sh/acme.sh --installcert -d ${domain} --ca-file /root/cert/ca.cer \
-        --cert-file /root/cert/${domain}.cer --key-file /root/cert/${domain}.key \
-        --fullchain-file /root/cert/fullchain.cer
+    --cert-file /root/cert/${domain}.cer --key-file /root/cert/${domain}.key \
+    --fullchain-file /root/cert/fullchain.cer
 
     if [ $? -ne 0 ]; then
         LOGE "install certs failed,exit"
@@ -592,8 +595,8 @@ ssl_cert_issue_by_cloudflare() {
             LOGI "issue cert succeed,installing..."
         fi
         ~/.acme.sh/acme.sh --installcert -d ${CF_Domain} -d *.${CF_Domain} --ca-file /root/cert/ca.cer \
-            --cert-file /root/cert/${CF_Domain}.cer --key-file /root/cert/${CF_Domain}.key \
-            --fullchain-file /root/cert/fullchain.cer
+        --cert-file /root/cert/${CF_Domain}.cer --key-file /root/cert/${CF_Domain}.key \
+        --fullchain-file /root/cert/fullchain.cer
         if [ $? -ne 0 ]; then
             LOGE "install cert failed,exit"
             rm -rf ~/.acme.sh/${CF_Domain}
