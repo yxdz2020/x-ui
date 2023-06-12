@@ -5,12 +5,13 @@ X-UI is a webUI panel based on Xray-core which supports multi protocols and mult
 This project is a fork of [vaxilu&#39;s project](https://github.com/vaxilu/x-ui),and it is a experiental project which used by myself for learning golang   
 If you need more language options ,please open a issue and let me know that
 
-# Changes  
+# Changes   
+- 2023.06.10：Enable TLS will reuse panel's certs and domain;add setting for ocspStapling;refactor device limit  
 - 2023.04.09：Support REALITY for now  
 - 2023.03.05：User expiry time limit for each user  
 - 2023.02.09：User traffic limit for each user,support utls sharing link  
 - 2022.12.07：Add device limit and more tls configuration  
-- 2022.11.15：Add xtls-rprx-vision flow option  
+- 2022.11.15：Add xtls-rprx-vision flow option;cron job for geo update and log clear    
 - 2022.10.23：Fully support for English,add export links,add CPU cores display
 - 2022.08.11：Support multi users on the same port;add CPU limit exceed  alert  
 - 2022.07.28：Add acme standalone mode for cert issue；add  mechanism to keep X-UI alive even there exist crashes
