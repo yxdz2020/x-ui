@@ -1,7 +1,7 @@
 # X-UI
 简体中文|[ENGLISH](./README_EN.md)  
 
-> 免责声明：该项目仅供个人学习、交流，请勿用于非法用途，请勿用于生产环境  
+> 免责声明：该项目仅供个人学习、交流，请遵守当地法律法规,勿用于非法用途;请勿用于生产环境  
 
 支持单端口多用户、多协议的 xray 面板，究极缝合怪    
 通过免费的Telegram bot方便快捷地进行监控、管理你的代理服务  
@@ -43,7 +43,12 @@ bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/insta
 For English Users,please use the following command to install English supported version:  
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install_en.sh)
-```    
+```
+如需安装指定的版本,可以在上述命令中指定版本号,如指定版本为`0.3.4.4`,安装命令如下：    
+```
+bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh) 0.3.4.4   
+```
+
 # 效果预览  
 `面板使用`:  
 <details>
