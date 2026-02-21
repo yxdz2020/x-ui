@@ -5,16 +5,6 @@ green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
 
-#consts for log check and clear,unit:M
-declare -r DEFAULT_LOG_FILE_DELETE_TRIGGER=35
-
-# consts for geo update
-PATH_FOR_GEO_IP='/usr/local/x-ui/bin/geoip.dat'
-PATH_FOR_CONFIG='/usr/local/x-ui/bin/config.json'
-PATH_FOR_GEO_SITE='/usr/local/x-ui/bin/geosite.dat'
-URL_FOR_GEO_IP='https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat'
-URL_FOR_GEO_SITE='https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat'
-
 #Add some basic function here
 function LOGD() {
     echo -e "${yellow}[DEG] $* ${plain}"
@@ -418,131 +408,7 @@ show_xray_status() {
     fi
 }
 
-#this will be an entrance for ssl cert issue
-#here we can provide two different methods to issue cert
-#first.standalone mode second.DNS API mode
 ssl_cert_issue() {
-    local method=""
-    echo -E ""
-    LOGD "******使用说明******"
-    LOGI "该脚本提供两种方式实现证书签发,证书安装路径均为/root/cert"
-    LOGI "方式1:acme standalone mode,需要保持端口开放"
-    LOGI "方式2:acme DNS API mode,需要提供Cloudflare Global API Key"
-    LOGI "如域名属于免费域名,则推荐使用方式1进行申请"
-    LOGI "如域名非免费域名且使用Cloudflare进行解析使用方式2进行申请"
-    read -p "请选择你想使用的方式,输入数字1或者2后回车": method
-    LOGI "你所使用的方式为${method}"
-
-    if [ "${method}" == "1" ]; then
-        ssl_cert_issue_standalone
-    elif [ "${method}" == "2" ]; then
-        ssl_cert_issue_by_cloudflare
-    else
-        LOGE "输入无效,请检查你的输入,脚本将退出..."
-        exit 1
-    fi
-}
-
-install_acme() {
-    cd ~
-    LOGI "开始安装acme脚本..."
-    curl https://get.acme.sh | sh
-    if [ $? -ne 0 ]; then
-        LOGE "acme安装失败"
-        return 1
-    else
-        LOGI "acme安装成功"
-    fi
-    return 0
-}
-
-#method for standalone mode
-ssl_cert_issue_standalone() {
-    #check for acme.sh first
-    if ! command -v ~/.acme.sh/acme.sh &>/dev/null; then
-        install_acme
-        if [ $? -ne 0 ]; then
-            LOGE "安装 acme 失败，请检查日志"
-            exit 1
-        fi
-    fi
-    #install socat second
-    if [[ x"${release}" == x"centos" ]]; then
-        yum install socat -y
-    else
-        apt install socat -y
-    fi
-    if [ $? -ne 0 ]; then
-        LOGE "无法安装socat,请检查错误日志"
-        exit 1
-    else
-        LOGI "socat安装成功..."
-    fi
-    #creat a directory for install cert
-    certPath=/root/cert
-    if [ ! -d "$certPath" ]; then
-        mkdir $certPath
-    fi
-    #get the domain here,and we need verify it
-    local domain=""
-    read -p "请输入你的域名:" domain
-    LOGD "你输入的域名为:${domain},正在进行域名合法性校验..."
-    #here we need to judge whether there exists cert already
-    local currentCert=$(~/.acme.sh/acme.sh --list | grep ${domain} | wc -l)
-    if [ ${currentCert} -ne 0 ]; then
-        local certInfo=$(~/.acme.sh/acme.sh --list)
-        LOGE "域名合法性校验失败,当前环境已有对应域名证书,不可重复申请,当前证书详情:"
-        LOGI "$certInfo"
-        exit 1
-    else
-        LOGI "域名合法性校验通过..."
-    fi
-    #get needed port here
-    local WebPort=80
-    read -p "请输入你所希望使用的端口,如回车将使用默认80端口:" WebPort
-    if [[ ${WebPort} -gt 65535 || ${WebPort} -lt 1 ]]; then
-        LOGE "你所选择的端口${WebPort}为无效值,将使用默认80端口进行申请"
-    fi
-    LOGI "将会使用${WebPort}进行证书申请,请确保端口处于开放状态..."
-    #NOTE:This should be handled by user
-    #open the port and kill the occupied progress
-    ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-    ~/.acme.sh/acme.sh --issue -d ${domain} --standalone --httpport ${WebPort}
-    if [ $? -ne 0 ]; then
-        LOGE "证书申请失败,原因请参见报错信息"
-        rm -rf ~/.acme.sh/${domain}
-        exit 1
-    else
-        LOGI "证书申请成功,开始安装证书..."
-    fi
-    #install cert
-    ~/.acme.sh/acme.sh --installcert -d ${domain} --ca-file /root/cert/ca.cer \
-        --cert-file /root/cert/${domain}.cer --key-file /root/cert/${domain}.key \
-        --fullchain-file /root/cert/fullchain.cer
-
-    if [ $? -ne 0 ]; then
-        LOGE "证书安装失败,脚本退出"
-        rm -rf ~/.acme.sh/${domain}
-        exit 1
-    else
-        LOGI "证书安装成功,开启自动更新..."
-    fi
-    ~/.acme.sh/acme.sh --upgrade --auto-upgrade
-    if [ $? -ne 0 ]; then
-        LOGE "自动更新设置失败,脚本退出"
-        ls -lah cert
-        chmod 755 $certPath
-        exit 1
-    else
-        LOGI "证书已安装且已开启自动更新,具体信息如下"
-        ls -lah cert
-        chmod 755 $certPath
-    fi
-
-}
-
-#method for DNS API mode
-ssl_cert_issue_by_cloudflare() {
     echo -E ""
     LOGD "******使用说明******"
     LOGI "该脚本将使用Acme脚本申请证书,使用时需保证:"
@@ -552,9 +418,11 @@ ssl_cert_issue_by_cloudflare() {
     LOGI "4.该脚本申请证书默认安装路径为/root/cert目录"
     confirm "我已确认以上内容[y/n]" "y"
     if [ $? -eq 0 ]; then
-        install_acme
+        cd ~
+        LOGI "安装Acme脚本"
+        curl https://get.acme.sh | sh
         if [ $? -ne 0 ]; then
-            LOGE "无法安装acme,请检查错误日志"
+            LOGE "安装acme脚本失败"
             exit 1
         fi
         CF_Domain=""
@@ -563,20 +431,13 @@ ssl_cert_issue_by_cloudflare() {
         certPath=/root/cert
         if [ ! -d "$certPath" ]; then
             mkdir $certPath
+        else
+            rm -rf $certPath
+            mkdir $certPath
         fi
         LOGD "请设置域名:"
         read -p "Input your domain here:" CF_Domain
-        LOGD "你的域名设置为:${CF_Domain},正在进行域名合法性校验..."
-        #here we need to judge whether there exists cert already
-        local currentCert=$(~/.acme.sh/acme.sh --list | grep ${CF_Domain} | wc -l)
-        if [ ${currentCert} -ne 0 ]; then
-            local certInfo=$(~/.acme.sh/acme.sh --list)
-            LOGE "域名合法性校验失败,当前环境已有对应域名证书,不可重复申请,当前证书详情:"
-            LOGI "$certInfo"
-            exit 1
-        else
-            LOGI "域名合法性校验通过..."
-        fi
+        LOGD "你的域名设置为:${CF_Domain}"
         LOGD "请设置API密钥:"
         read -p "Input your key here:" CF_GlobalKey
         LOGD "你的API密钥为:${CF_GlobalKey}"
@@ -593,17 +454,15 @@ ssl_cert_issue_by_cloudflare() {
         ~/.acme.sh/acme.sh --issue --dns dns_cf -d ${CF_Domain} -d *.${CF_Domain} --log
         if [ $? -ne 0 ]; then
             LOGE "证书签发失败,脚本退出"
-            rm -rf ~/.acme.sh/${CF_Domain}
             exit 1
         else
             LOGI "证书签发成功,安装中..."
         fi
         ~/.acme.sh/acme.sh --installcert -d ${CF_Domain} -d *.${CF_Domain} --ca-file /root/cert/ca.cer \
-            --cert-file /root/cert/${CF_Domain}.cer --key-file /root/cert/${CF_Domain}.key \
-            --fullchain-file /root/cert/fullchain.cer
+        --cert-file /root/cert/${CF_Domain}.cer --key-file /root/cert/${CF_Domain}.key \
+        --fullchain-file /root/cert/fullchain.cer
         if [ $? -ne 0 ]; then
             LOGE "证书安装失败,脚本退出"
-            rm -rf ~/.acme.sh/${CF_Domain}
             exit 1
         else
             LOGI "证书安装成功,开启自动更新..."
@@ -624,156 +483,6 @@ ssl_cert_issue_by_cloudflare() {
     fi
 }
 
-#add for cron jobs,including sync geo data,check logs and restart x-ui
-cron_jobs() {
-    clear
-    echo -e "
-  ${green}定时任务管理${plain}
-  ${green}0.${plain}  返回主菜单
-  ${green}1.${plain}  开启定时更新geo
-  ${green}2.${plain}  关闭定时更新geo
-  ${green}3.${plain}  开启定时删除xray日志
-  ${green}4.${plain}  关闭定时删除xray日志
-  "
-    echo && read -p "请输入选择 [0-4]: " num
-    case "${num}" in
-    0)
-        show_menu
-        ;;
-    1)
-        enable_auto_update_geo
-        ;;
-    2)
-        disable_auto_update_geo
-        ;;
-    3)
-        enable_auto_clear_log
-        ;;
-    4)
-        disable_auto_clear_log
-        ;;
-    *)
-        LOGE "请输入正确的数字 [0-4]"
-        ;;
-    esac
-}
-
-#update geo data
-update_geo() {
-    #back up first
-    mv ${PATH_FOR_GEO_IP} ${PATH_FOR_GEO_IP}.bak
-    #update data
-    curl -s -L -o ${PATH_FOR_GEO_IP} ${URL_FOR_GEO_IP}
-    if [[ $? -ne 0 ]]; then
-        echo "update geoip.dat failed"
-        mv ${PATH_FOR_GEO_IP}.bak ${PATH_FOR_GEO_IP}
-    else
-        echo "update geoip.dat succeed"
-        rm -f ${PATH_FOR_GEO_IP}.bak
-    fi
-    mv ${PATH_FOR_GEO_SITE} ${PATH_FOR_GEO_SITE}.bak
-    curl -s -L -o ${PATH_FOR_GEO_SITE} ${URL_FOR_GEO_SITE}
-    if [[ $? -ne 0 ]]; then
-        echo "update geosite.dat failed"
-        mv ${PATH_FOR_GEO_SITE}.bak ${PATH_FOR_GEO_SITE}
-    else
-        echo "update geosite.dat succeed"
-        rm -f ${PATH_FOR_GEO_SITE}.bak
-    fi
-    #restart x-ui
-    systemctl restart x-ui
-}
-
-enable_auto_update_geo() {
-    LOGI "正在开启自动更新geo数据..."
-    crontab -l >/tmp/crontabTask.tmp
-    echo "00 4 */2 * * x-ui geo > /dev/null" >>/tmp/crontabTask.tmp
-    crontab /tmp/crontabTask.tmp
-    rm /tmp/crontabTask.tmp
-    LOGI "开启自动更新geo数据成功"
-}
-
-disable_auto_update_geo() {
-    crontab -l | grep -v "x-ui geo" | crontab -
-    if [[ $? -ne 0 ]]; then
-        LOGI "取消x-ui 自动更新geo数据失败"
-    else
-        LOGI "取消x-ui 自动更新geo数据成功"
-    fi
-}
-
-#clear xray log,need enable log in config template
-#here we need input an absolute path for log
-clear_log() {
-    LOGI "清除xray日志中..."
-    local filePath=''
-    if [[ $# -gt 0 ]]; then
-        filePath=$1
-    else
-        LOGE "未输入有效文件路径,脚本退出"
-        exit 1
-    fi
-    LOGI "日志路径为:${filePath}"
-    if [[ ! -f ${filePath} ]]; then
-        LOGE "清除xray日志文件失败,${filePath}不存在,请确认"
-        exit 1
-    fi
-    fileSize=$(ls -la ${filePath} --block-size=M | awk '{print $5}' | awk -F 'M' '{print$1}')
-    if [[ ${fileSize} -gt ${DEFAULT_LOG_FILE_DELETE_TRIGGER} ]]; then
-        rm $1
-        if [[ $? -ne 0 ]]; then
-            LOGE "清除xray日志文件:${filePath}失败"
-        else
-            LOGI "清除xray日志文件:${filePath}成功"
-            systemctl restart x-ui
-        fi
-    else
-        LOGI "当前日志大小为${fileSize}M,小于${DEFAULT_LOG_FILE_DELETE_TRIGGER}M,将不会清除"
-    fi
-}
-
-#enable auto delete log，need file path as
-enable_auto_clear_log() {
-    LOGI "设置定时清除xray日志..."
-    local accessfilePath=''
-    local errorfilePath=''
-    accessfilePath=$(cat ${PATH_FOR_CONFIG} | jq .log.access | tr -d '"')
-    errorfilePath=$(cat ${PATH_FOR_CONFIG} | jq .log.error | tr -d '"')
-    if [[ ! -n ${accessfilePath} && ! -n ${errorfilePath} ]]; then
-        LOGI "配置文件中的日志文件路径无效,脚本退出"
-        exit 1
-    fi
-    if [[ -f ${accessfilePath} ]]; then
-        crontab -l >/tmp/crontabTask.tmp
-        echo "30 4 */2 * * x-ui clear ${accessfilePath} > /dev/null" >>/tmp/crontabTask.tmp
-        crontab /tmp/crontabTask.tmp
-        rm /tmp/crontabTask.tmp
-        LOGI "设置定时清除xray日志:${accessfilePath}成功"
-    else
-        LOGE "accesslog不存在,将不会为其设置定时清除"
-    fi
-
-    if [[ -f ${errorfilePath} ]]; then
-        crontab -l >/tmp/crontabTask.tmp
-        echo "30 4 */2 * * x-ui clear ${errorfilePath} > /dev/null" >>/tmp/crontabTask.tmp
-        crontab /tmp/crontabTask.tmp
-        rm /tmp/crontabTask.tmp
-        LOGI "设置定时清除xray日志:${errorfilePath}成功"
-    else
-        LOGE "errorlog不存在,将不会为其设置定时清除"
-    fi
-}
-
-#disable auto dlete log
-disable_auto_clear_log() {
-    crontab -l | grep -v "x-ui clear" | crontab -
-    if [[ $? -ne 0 ]]; then
-        LOGI "取消 定时清除xray日志失败"
-    else
-        LOGI "取消 定时清除xray日志成功"
-    fi
-}
-
 show_usage() {
     echo "x-ui 管理脚本使用方法: "
     echo "------------------------------------------"
@@ -789,9 +498,6 @@ show_usage() {
     echo "x-ui update       - 更新 x-ui 面板"
     echo "x-ui install      - 安装 x-ui 面板"
     echo "x-ui uninstall    - 卸载 x-ui 面板"
-    echo "x-ui clear        - 清除 x-ui 日志"
-    echo "x-ui geo          - 更新 x-ui geo数据"
-    echo "x-ui cron         - 配置 x-ui 定时任务"
     echo "------------------------------------------"
 }
 
@@ -807,7 +513,7 @@ show_menu() {
   ${green}4.${plain} 重置用户名密码
   ${green}5.${plain} 重置面板设置
   ${green}6.${plain} 设置面板端口
-  ${green}7.${plain} 查看当前面板信息
+  ${green}7.${plain} 查看当前面板设置
 ————————————————
   ${green}8.${plain} 启动 x-ui
   ${green}9.${plain} 停止 x-ui
@@ -820,10 +526,9 @@ show_menu() {
 ————————————————
   ${green}15.${plain} 一键安装 bbr (最新内核)
   ${green}16.${plain} 一键申请SSL证书(acme申请)
-  ${green}17.${plain} 配置x-ui定时任务
  "
     show_status
-    echo && read -p "请输入选择 [0-17],查看面板登录信息请输入数字7:" num
+    echo && read -p "请输入选择 [0-16]: " num
 
     case "${num}" in
     0)
@@ -877,11 +582,8 @@ show_menu() {
     16)
         ssl_cert_issue
         ;;
-    17)
-        check_install && cron_jobs
-        ;;
     *)
-        LOGE "请输入正确的数字 [0-17],查看面板登录信息请输入数字7"
+        LOGE "请输入正确的数字 [0-16]"
         ;;
     esac
 }
@@ -920,15 +622,6 @@ if [[ $# > 0 ]]; then
         ;;
     "uninstall")
         check_install 0 && uninstall 0
-        ;;
-    "geo")
-        check_install 0 && update_geo
-        ;;
-    "clear")
-        check_install 0 && clear_log $2
-        ;;
-    "cron")
-        check_install && cron_jobs
         ;;
     *) show_usage ;;
     esac
