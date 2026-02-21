@@ -253,6 +253,11 @@ func (p *process) GetTraffic(reset bool) ([]*Traffic, error) {
 	traffics := make([]*Traffic, 0)
 	for _, stat := range resp.GetStat() {
 		matchs := trafficRegex.FindStringSubmatch(stat.Name)
+		// 修复崩溃的关键判断
+		if len(matchs) < 4 {
+			continue
+		}
+
 		isInbound := matchs[1] == "inbound"
 		tag := matchs[2]
 		isDown := matchs[3] == "downlink"
