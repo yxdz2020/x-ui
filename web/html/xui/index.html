@@ -164,18 +164,22 @@
             </transition>
         </a-layout-content>
     </a-layout>
+    
     <a-modal id="version-modal" v-model="versionModal.visible" title="切换版本"
              :closable="true" @ok="() => versionModal.visible = false"
-             ok-text="确定" cancel-text="取消" width="600px">
-        <h2>点击你想切换的版本</h2>
-        <h2>请谨慎选择，旧版本可能配置不兼容</h2>
+             ok-text="确定" cancel-text="取消" width="700px">
+        <h2 style="text-align: center">点击你想切换的版本</h2>
+        <h2 style="text-align: center; color: red">请谨慎选择，旧版本可能配置不兼容</h2>
         
-        <div style="min-height: 150px">
-            <template v-for="version, index in pagedVersions">
-                <a-tag :color="index % 2 == 0 ? 'blue' : 'green'"
-                       style="margin: 10px" @click="switchV2rayVersion(version)">
-                    [[ version ]]
-                </a-tag>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 20px 0; min-height: 100px;">
+            <template v-for="(version, index) in pagedVersions">
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <a-tag :color="index % 2 == 0 ? 'blue' : 'green'"
+                           style="margin: 0; cursor: pointer; width: 100%; text-align: center; padding: 4px 0;" 
+                           @click="switchV2rayVersion(version)">
+                        [[ version ]]
+                    </a-tag>
+                </div>
             </template>
         </div>
 
@@ -194,7 +198,8 @@
             </a-pagination>
         </div>
     </a-modal>
-    </a-layout>
+
+</a-layout>
 {{template "js" .}}
 <script>
 
@@ -275,16 +280,16 @@
         }
     }
 
-    // 修改部分: 增加分页状态
+    // 分页状态：pageSize 保持 10
     const versionModal = {
         visible: false,
         versions: [],
-        page: 1,      // 当前页码
-        pageSize: 10, // 每页数量
+        page: 1,      
+        pageSize: 10, 
         show(versions) {
             this.visible = true;
             this.versions = versions;
-            this.page = 1; // 每次打开重置为第一页
+            this.page = 1; 
         },
         hide() {
             this.visible = false;
@@ -301,7 +306,6 @@
             spinning: false,
             loadingTip: '加载中',
         },
-        // 修改部分: 增加计算属性，处理分页逻辑
         computed: {
             pagedVersions() {
                 const start = (this.versionModal.page - 1) * this.versionModal.pageSize;
