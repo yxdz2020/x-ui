@@ -1,29 +1,18 @@
 name: Release X-ui
 on:
-  push:
-    tags:
-      - 0.*
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (v0.1.0)'
+        required: true
+        default: '0.1.0'
+
+permissions:
+  contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: true
-          prerelease: false
   linuxamd64build:
     name: build x-ui amd64 version
-    needs: release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -53,18 +42,20 @@ jobs:
           cd ..
       - name: package
         run: tar -zcvf x-ui-linux-amd64.tar.gz x-ui
-      - name: upload
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
+      
+      - name: Release and Upload Assets
+        uses: softprops/action-gh-release@v2.5.0
         with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: x-ui-linux-amd64.tar.gz
-          asset_name: x-ui-linux-amd64.tar.gz
-          asset_content_type: application/gzip
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          draft: true
+          prerelease: false
+          files: x-ui-linux-amd64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   linuxarm64build:
     name: build x-ui arm64 version
-    needs: release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -96,12 +87,14 @@ jobs:
           cd ..
       - name: package
         run: tar -zcvf x-ui-linux-arm64.tar.gz x-ui
-      - name: upload
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
+      
+      - name: Release and Upload Assets
+        uses: softprops/action-gh-release@v2.5.0
         with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: x-ui-linux-arm64.tar.gz
-          asset_name: x-ui-linux-arm64.tar.gz
-          asset_content_type: application/gzip
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          draft: true
+          prerelease: false
+          files: x-ui-linux-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
