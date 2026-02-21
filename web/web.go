@@ -4,13 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"embed"
-	"github.com/BurntSushi/toml"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/robfig/cron/v3"
-	"golang.org/x/text/language"
 	"html/template"
 	"io"
 	"io/fs"
@@ -27,6 +20,14 @@ import (
 	"x-ui/web/job"
 	"x-ui/web/network"
 	"x-ui/web/service"
+
+	"github.com/BurntSushi/toml"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/gin"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/robfig/cron/v3"
+	"golang.org/x/text/language"
 )
 
 //go:embed assets/*
@@ -40,8 +41,14 @@ var i18nFS embed.FS
 
 var startTime = time.Now()
 
+var xuiBeginRunTime string
+
 type wrapAssetsFS struct {
 	embed.FS
+}
+
+func GetXuiStarttime() string {
+	return xuiBeginRunTime
 }
 
 func (f *wrapAssetsFS) Open(name string) (fs.File, error) {
@@ -84,9 +91,10 @@ type Server struct {
 	server *controller.ServerController
 	xui    *controller.XUIController
 
-	xrayService    service.XrayService
-	settingService service.SettingService
-	inboundService service.InboundService
+	xrayService     service.XrayService
+	settingService  service.SettingService
+	inboundService  service.InboundService
+	telegramService service.TelegramService
 
 	cron *cron.Cron
 
@@ -294,9 +302,30 @@ func (s *Server) startTask() {
 
 	// 每 30 秒检查一次 inbound 流量超出和到期的情况
 	s.cron.AddJob("@every 30s", job.NewCheckInboundJob())
+	//每2s检查一次SSH信息
+	s.cron.AddFunc("@every 2s", func() { job.NewStatsNotifyJob().SSHStatusLoginNotify(xuiBeginRunTime) })
+	// 每一天提示一次流量情况,上海时间8点30
+	var entry cron.EntryID
+	isTgbotenabled, err := s.settingService.GetTgbotenabled()
+	if (err == nil) && (isTgbotenabled) {
+		runtime, err := s.settingService.GetTgbotRuntime()
+		if err != nil || runtime == "" {
+			logger.Errorf("Add NewStatsNotifyJob error[%s],Runtime[%s] invalid,wil run default", err, runtime)
+			runtime = "@daily"
+		}
+		logger.Infof("Tg notify enabled,run at %s", runtime)
+		entry, err = s.cron.AddJob(runtime, job.NewStatsNotifyJob())
+		if err != nil {
+			logger.Warning("Add NewStatsNotifyJob error", err)
+			return
+		}
+	} else {
+		s.cron.Remove(entry)
+	}
 }
 
 func (s *Server) Start() (err error) {
+	//这是一个匿名函数，没没有函数名
 	defer func() {
 		if err != nil {
 			s.Stop()
@@ -348,6 +377,7 @@ func (s *Server) Start() (err error) {
 		listener = network.NewAutoHttpsListener(listener)
 		listener = tls.NewListener(listener, c)
 	}
+
 	if certFile != "" || keyFile != "" {
 		logger.Info("web server run https on", listener.Addr())
 	} else {
@@ -355,7 +385,14 @@ func (s *Server) Start() (err error) {
 	}
 	s.listener = listener
 
+	xuiBeginRunTime = time.Now().Format("2006-01-02 15:04:05")
+
 	s.startTask()
+	//run telegram service
+	go func() {
+		s.telegramService.StartRun()
+		time.Sleep(time.Second * 2)
+	}()
 
 	s.httpServer = &http.Server{
 		Handler: engine,
@@ -370,6 +407,7 @@ func (s *Server) Start() (err error) {
 
 func (s *Server) Stop() error {
 	s.cancel()
+	s.telegramService.StopRunAndClose()
 	s.xrayService.StopXray()
 	if s.cron != nil {
 		s.cron.Stop()
